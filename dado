@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dado da sorte</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ background:#080e1d;
+ color:white;
+ font-family:Arial,sans-serif;
+}
+
+#luckv4{
+ max-width:480px;
+ margin:auto;
+ padding:20px;
+ text-align:center;
+ min-height:100vh;
+}
+
+.screen{
+ display:none;
+ min-height:90vh;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ gap:20px;
+}
+
+.screen.active{display:flex}
+
+h1{
+ font-size:29px;
+ margin:0;
+ font-weight:800;
+}
+
+p{
+ color:#b9c3d5;
+ margin:0;
+ font-size:16px;
+}
+
+.die{
+ width:132px;
+ height:132px;
+ background:white;
+ border-radius:24px;
+ display:grid;
+ grid-template:repeat(3,1fr)/repeat(3,1fr);
+ padding:17px;
+ gap:7px;
+ box-shadow:0 8px 35px #ffffff20;
+}
+
+.pip{
+ background:#101827;
+ border-radius:50%;
+ visibility:hidden;
+}
+
+.pip.on{visibility:visible}
+
+.pulse{
+ animation:luckpulse 1.4s infinite ease-in-out;
+}
+
+@keyframes luckpulse{
+ 50%{
+  transform:scale(1.08);
+  filter:drop-shadow(0 0 16px #fff8);
+ }
+}
+
+.nums{
+ display:grid;
+ grid-template-columns:repeat(5,1fr);
+ gap:9px;
+ width:100%;
+ max-width:330px;
+}
+
+.dice-nums{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:10px;
+ width:100%;
+ max-width:280px;
+}
+
+button{
+ border:0;
+ border-radius:12px;
+ padding:14px 10px;
+ font-weight:800;
+ font-size:16px;
+ cursor:pointer;
+ color:white;
+ background:#24334c;
+}
+
+button.chosen{
+ background:#2477ed;
+ outline:2px solid white;
+}
+
+button:disabled{
+ cursor:not-allowed;
+}
+
+.mainbtn{
+ background:#16a36a;
+ width:100%;
+ max-width:300px;
+ padding:16px;
+}
+
+.retry{
+ background:#2477ed;
+ width:100%;
+ max-width:300px;
+ padding:16px;
+}
+
+.qr{
+ background:white;
+ padding:10px;
+ border-radius:12px;
+}
+
+.pix-label{
+ font-size:14px;
+ font-weight:800;
+ letter-spacing:2px;
+ color:#b9c3d5;
+ margin-top:-5px;
+}
+
+.pix-row{
+ display:flex;
+ align-items:stretch;
+ width:100%;
+ max-width:230px;
+ gap:7px;
+}
+
+.pix-key{
+ flex:1;
+ min-width:0;
+ background:#17243a;
+ border:1px solid #344762;
+ border-radius:10px;
+ padding:14px 8px;
+ font-size:14px;
+ font-weight:700;
+ letter-spacing:1px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+}
+
+.copy-btn{
+ background:#16a36a;
+ border-radius:10px;
+ width:82px;
+ flex:0 0 82px;
+ padding:12px 0;
+ font-size:13px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ white-space:nowrap;
+ text-align:center;
+}
+
+.double-text{
+ font-size:17px;
+ font-weight:800;
+ color:#fff;
+ margin-top:8px;
+ animation:softPulse 2s infinite ease-in-out;
+}
+
+.amount{
+ font-size:32px;
+ font-weight:900;
+ color:#a8e6bd;
+ animation:softPulse 2s infinite ease-in-out;
+}
+
+@keyframes softPulse{
+ 0%,100%{
+  opacity:1;
+  transform:scale(1);
+ }
+ 50%{
+  opacity:.72;
+  transform:scale(1.045);
+ }
+}
+
+.result-icon{font-size:64px}
+
+.win{color:#39d98a}
+
+.lose{color:#ff6464}
+
+.timer{
+ font-size:14px;
+ color:#aab8ce;
+}
+
+.pix-input{
+ width:100%;
+ max-width:300px;
+ background:#17243a;
+ border:2px solid #344762;
+ border-radius:12px;
+ padding:17px 14px;
+ color:white;
+ font-size:16px;
+ text-align:center;
+ outline:none;
+}
+
+.pix-input:focus{
+ border-color:#39d98a;
+}
+
+.pix-input::placeholder{
+ color:#9aa9bd;
+}
+
+.pix-input:disabled{
+ opacity:.5;
+}
+
+.payment-note{
+ font-size:12px;
+ color:#8998ad;
+ max-width:300px;
+ line-height:1.5;
+}
+
+.success-message{
+ color:#b9c3d5;
+ font-size:16px;
+ line-height:1.5;
+ max-width:310px;
+}
+
+/* ADIÇÃO: consentimento para armazenamento da chave */
+.consent-row{
+ display:flex;
+ align-items:flex-start;
+ gap:9px;
+ max-width:300px;
+ text-align:left;
+ color:#b9c3d5;
+ font-size:12px;
+ line-height:1.5;
+}
+
+.consent-row input{
+ margin-top:2px;
+ flex:0 0 auto;
+}
+</style>
+</head>
+
+<body>
+
+<div id="luckv4">
+
+<!-- TELA INICIAL -->
+<section id="lvIntro" class="screen active">
+
+ <div class="die pulse">
+  <i class="pip on"></i>
+  <i class="pip"></i>
+  <i class="pip"></i>
+  <i class="pip"></i>
+  <i class="pip on"></i>
+  <i class="pip"></i>
+  <i class="pip"></i>
+  <i class="pip"></i>
+  <i class="pip on"></i>
+ </div>
+
+ <h1 class="pulse">Dado da sorte</h1>
+ <p>Dobre seu dinheiro!</p>
+
+ <button class="mainbtn" id="lvStart">
+  COMEÇAR
+ </button>
+
+</section>
+
+<!-- TELA DE DEPÓSITO -->
+<section id="lvChoice" class="screen">
+
+ <h1>Selecione o valor do depósito</h1>
+
+ <p>Depósito mínimo R$1 e máximo R$10</p>
+
+ <div class="nums" id="lvLuckyNums"></div>
+
+ <button
+  class="mainbtn"
+  id="lvLuckyConfirm"
+  disabled
+  style="opacity:.45"
+ >
+  CONFIRMAR
+ </button>
+
+</section>
+
+<!-- TELA PIX -->
+<section id="lvQR" class="screen">
+
+ <h1>Escolha a forma de depósito</h1>
+
+ <div class="qr">
+  <canvas id="lvCanvas" width="210" height="210"></canvas>
+ </div>
+
+ <p class="payment-note">QR Code demonstrativo. Não realiza pagamentos.</p>
+
+ <div class="pix-label">CHAVE PIX</div>
+
+ <div class="pix-row">
+  <div class="pix-key" id="lvPixKey">
+   41996958751
+  </div>
+
+  <button class="copy-btn" id="lvCopy">
+   COPIAR
+  </button>
+ </div>
+
+ <div class="double-text">
+  Esse será o valor do seu prêmio
+ </div>
+
+ <div class="amount" id="lvAmount">
+  R$ 2
+ </div>
+
+ <button class="mainbtn" id="lvContinue">
+  CONTINUAR
+ </button>
+
+</section>
+
+<!-- TELA DO JOGO -->
+<section id="lvGame" class="screen">
+
+ <h1>Jogue o dado</h1>
+
+ <div class="die" id="lvDie"></div>
+
+ <p id="lvStatus">Escolha de 1 a 6</p>
+
+ <div class="dice-nums" id="lvDiceNums"></div>
+
+ <button
+  class="mainbtn"
+  id="lvRoll"
+  disabled
+  style="opacity:.45"
+ >
+  CONFIRMAR
+ </button>
+
+</section>
+
+<!-- TELA DE VITÓRIA -->
+<section id="lvWin" class="screen">
+
+ <div class="result-icon">🏆</div>
+
+ <h1 class="win">VOCÊ VENCEU!</h1>
+
+ <p>Parabéns! Você acertou o número.</p>
+
+ <p>Digite sua chave Pix abaixo:</p>
+
+ <input
+  type="text"
+  id="lvWinnerPix"
+  class="pix-input"
+  placeholder="Digite sua chave Pix"
+  autocomplete="off"
+  inputmode="text"
+ >
+
+ <!-- ADIÇÃO: aviso e consentimento -->
+ <p class="payment-note">
+  Esta é uma demonstração. Sua chave Pix será enviada e armazenada na planilha do responsável pelo jogo. Nenhum pagamento será realizado.
+ </p>
+
+ <label class="consent-row">
+  <input type="checkbox" id="lvPixConsent">
+  <span>Concordo com o envio e armazenamento da minha chave Pix para registro desta demonstração.</span>
+ </label>
+
+ <button
+  class="mainbtn"
+  id="lvSendPix"
+  disabled
+  style="opacity:.45"
+ >
+  ENVIAR
+ </button>
+
+</section>
+
+<!-- TELA DE CONFIRMAÇÃO -->
+<section id="lvPaymentSent" class="screen">
+
+ <div class="result-icon">🎉</div>
+
+ <h1 class="win">PARABÉNS!</h1>
+
+ <p class="success-message">
+ O envio foi encaminhado para registro de demonstração. Confira a planilha para confirmar o recebimento. Nenhum Pix foi enviado ou agendado.
+ </p>
+
+ <button class="mainbtn" id="lvContinuePlaying">
+  CONTINUAR JOGANDO
+ </button>
+
+ <p class="timer" id="lvTimerPayment">
+  Voltando ao início em 10 segundos...
+ </p>
+
+</section>
+
+<!-- TELA DE DERROTA -->
+<section id="lvLose" class="screen">
+
+ <div class="result-icon">😕</div>
+
+ <h1 class="lose">VOCÊ PERDEU!</h1>
+
+ <p>Não foi dessa vez. Tente novamente.</p>
+
+ <button class="retry" id="lvRetryLose">
+  TENTAR NOVAMENTE
+ </button>
+
+ <p class="timer" id="lvTimerLose">
+  Voltando ao início em 10 segundos...
+ </p>
+
+</section>
+
+</div>
+
+<script>
+(()=>{
+const root=document.getElementById('luckv4');
+const $=id=>document.getElementById(id);
+
+/* ADIÇÃO: endereço da planilha */
+const SHEETS_URL='https://script.google.com/macros/s/AKfycbxsKyuORvjA1fx73L1RkuwmMTWzdxwmyusx7mkvt0OAxhzxhNP1hX1tMH1zS0Z38_9N/exec';
+
+let lucky=0;
+let selected=0;
+let rolling=false;
+
+let rollTimer=null;
+let resultTimer=null;
+let returnTimer=null;
+let countdownTimer=null;
+
+const screens=[
+ 'lvIntro',
+ 'lvChoice',
+ 'lvQR',
+ 'lvGame',
+ 'lvWin',
+ 'lvPaymentSent',
+ 'lvLose'
+];
+
+function show(id){
+ screens.forEach(s=>{
+  $(s).classList.toggle('active',s===id);
+ });
+}
+
+function makeDie(n){
+ const patterns={
+  1:[4],
+  2:[0,8],
+  3:[0,4,8],
+  4:[0,2,6,8],
+  5:[0,2,4,6,8],
+  6:[0,2,3,5,6,8]
+ };
+
+ $('lvDie').innerHTML=Array.from(
+  {length:9},
+  (_,i)=>`<i class="pip ${patterns[n].includes(i)?'on':''}"></i>`
+ ).join('');
+}
+
+function makeQR(){
+ const c=$('lvCanvas');
+ const ctx=c.getContext('2d');
+ const n=29;
+ const cell=210/n;
+
+ ctx.fillStyle='#fff';
+ ctx.fillRect(0,0,210,210);
+
+ let seed=Math.floor(Math.random()*1e9);
+
+ function rand(){
+  seed=(seed*1664525+1013904223)>>>0;
+  return seed/4294967296;
+ }
+
+ let a=Array.from(
+  {length:n},
+  ()=>Array.from({length:n},()=>rand()>.5)
+ );
+
+ function finder(x,y){
+  for(let yy=0;yy<7;yy++){
+   for(let xx=0;xx<7;xx++){
+    a[y+yy][x+xx]=(
+     xx===0||xx===6||
+     yy===0||yy===6||
+     (xx>=2&&xx<=4&&yy>=2&&yy<=4)
+    );
+   }
+  }
+ }
+
+ finder(0,0);
+ finder(n-7,0);
+ finder(0,n-7);
+
+ ctx.fillStyle='#111';
+
+ for(let y=0;y<n;y++){
+  for(let x=0;x<n;x++){
+   if(a[y][x]){
+    ctx.fillRect(
+     x*cell,
+     y*cell,
+     Math.ceil(cell),
+     Math.ceil(cell)
+    );
+   }
+  }
+ }
+}
+
+function resetSelections(){
+
+ lucky=0;
+
+ root.querySelectorAll('#lvLuckyNums button')
+  .forEach(x=>x.classList.remove('chosen'));
+
+ $('lvLuckyConfirm').disabled=true;
+ $('lvLuckyConfirm').style.opacity='.45';
+
+ selected=0;
+
+ root.querySelectorAll('#lvDiceNums button')
+  .forEach(x=>x.classList.remove('chosen'));
+
+ $('lvRoll').disabled=true;
+ $('lvRoll').style.opacity='.45';
+
+ $('lvStatus').textContent='Escolha de 1 a 6';
+
+ $('lvWinnerPix').value='';
+
+ /* ADIÇÃO: reinicia consentimento e botão */
+ $('lvPixConsent').checked=false;
+ $('lvSendPix').disabled=true;
+ $('lvSendPix').style.opacity='.45';
+ $('lvSendPix').textContent='ENVIAR';
+
+}
+
+function backToStart(){
+
+ clearTimeout(returnTimer);
+ clearTimeout(resultTimer);
+ clearInterval(countdownTimer);
+ clearInterval(rollTimer);
+
+ rolling=false;
+
+ resetSelections();
+
+ show('lvIntro');
+}
+
+function showResult(win){
+
+ clearInterval(rollTimer);
+ rolling=false;
+
+ if(win){
+
+  show('lvWin');
+
+ }else{
+
+  show('lvLose');
+  startReturnCountdown('Lose');
+
+ }
+}
+
+function startReturnCountdown(type){
+
+ clearTimeout(returnTimer);
+ clearInterval(countdownTimer);
+
+ let seconds=10;
+ const label=$('lvTimer'+type);
+
+ label.textContent=
+  `Voltando ao início em ${seconds} segundos...`;
+
+ countdownTimer=setInterval(()=>{
+  seconds--;
+
+  label.textContent=
+   `Voltando ao início em ${seconds} segundos...`;
+
+  if(seconds<=0){
+   clearInterval(countdownTimer);
+  }
+
+ },1000);
+
+ returnTimer=setTimeout(backToStart,10000);
+}
+
+/* ADIÇÃO: envia os dados para o Google Sheets */
+async function sendPix(){
+
+ const pix=$('lvWinnerPix').value.trim();
+ const consent=$('lvPixConsent').checked;
+
+ if(!pix){
+  $('lvWinnerPix').focus();
+  return;
+ }
+
+ if(!consent){
+  alert('É necessário concordar com o armazenamento da chave Pix.');
+  return;
+ }
+
+ const btn=$('lvSendPix');
+
+ btn.disabled=true;
+ btn.textContent='ENVIANDO...';
+
+ const dados={
+  valor:lucky*2,
+  chavePix:pix
+ };
+
+ try{
+
+  await fetch(SHEETS_URL,{
+   method:'POST',
+   mode:'no-cors',
+   headers:{
+    'Content-Type':'text/plain;charset=utf-8'
+   },
+   body:JSON.stringify(dados)
+  });
+
+  clearTimeout(returnTimer);
+  clearInterval(countdownTimer);
+
+  show('lvPaymentSent');
+
+  startReturnCountdown('Payment');
+
+ }catch(error){
+
+  btn.disabled=false;
+  btn.textContent='ENVIAR';
+  btn.style.opacity='1';
+
+  alert('Não foi possível encaminhar o envio. Verifique sua conexão e tente novamente.');
+
+ }
+
+}
+
+/* ADIÇÃO: libera o botão somente com chave e consentimento */
+function updateSendButton(){
+
+ const hasText=$('lvWinnerPix').value.trim().length>0;
+ const consent=$('lvPixConsent').checked;
+ const ready=hasText&&consent;
+
+ $('lvSendPix').disabled=!ready;
+
+ $('lvSendPix').style.opacity=
+  ready?'1':'.45';
+
+}
+
+$('lvWinnerPix').addEventListener('input',updateSendButton);
+$('lvPixConsent').addEventListener('change',updateSendButton);
+
+// Iniciar rodada
+function startRoll(){
+
+ if(rolling||!selected)return;
+
+ rolling=true;
+
+ $('lvRoll').disabled=true;
+ $('lvRoll').style.opacity='.45';
+
+ $('lvStatus').textContent='O dado está rolando...';
+
+ const win=Math.random()<0.45;
+
+ let result;
+
+ if(win){
+
+  result=selected;
+
+ }else{
+
+  const other=[1,2,3,4,5,6]
+   .filter(n=>n!==selected);
+
+  result=other[
+   Math.floor(Math.random()*other.length)
+  ];
+
+ }
+
+ const start=Date.now();
+ let next=0;
+
+ rollTimer=setInterval(()=>{
+
+  const elapsed=(Date.now()-start)/1000;
+
+  if(elapsed>=30){
+
+   clearInterval(rollTimer);
+
+   makeDie(result);
+
+   $('lvStatus').textContent=
+    win?'Você acertou!':'Não foi dessa vez.';
+
+   resultTimer=setTimeout(()=>{
+    showResult(win);
+   },700);
+
+   return;
+  }
+
+  if(Date.now()-next>
+   68.75/Math.max(.10,1-.03*elapsed)
+  ){
+
+   makeDie(1+Math.floor(Math.random()*6));
+
+   next=Date.now();
+
+  }
+
+ },10);
+
+}
+
+// Tela inicial
+$('lvStart').onclick=()=>{
+ show('lvChoice');
+};
+
+// Valores de depósito
+for(let i=1;i<=10;i++){
+
+ const b=document.createElement('button');
+
+ b.textContent=i;
+
+ b.onclick=()=>{
+
+  lucky=i;
+
+  root.querySelectorAll('#lvLuckyNums button')
+   .forEach(x=>x.classList.remove('chosen'));
+
+  b.classList.add('chosen');
+
+  $('lvLuckyConfirm').disabled=false;
+  $('lvLuckyConfirm').style.opacity='1';
+
+ };
+
+ $('lvLuckyNums').appendChild(b);
+}
+
+// Confirmar depósito
+$('lvLuckyConfirm').onclick=()=>{
+
+ if(!lucky)return;
+
+ $('lvAmount').textContent='R$ '+(lucky*2);
+
+ makeQR();
+
+ show('lvQR');
+
+};
+
+// Entrada no jogo
+$('lvContinue').onclick=()=>{
+
+ show('lvGame');
+
+ makeDie(1);
+
+};
+
+// Copiar chave Pix
+$('lvCopy').onclick=async()=>{
+
+ const key='41996958751';
+ const btn=$('lvCopy');
+
+ try{
+
+  if(navigator.clipboard&&window.isSecureContext){
+
+   await navigator.clipboard.writeText(key);
+
+  }else{
+
+   const temp=document.createElement('textarea');
+
+   temp.value=key;
+   temp.style.position='fixed';
+   temp.style.opacity='0';
+
+   document.body.appendChild(temp);
+
+   temp.select();
+
+   const copied=document.execCommand('copy');
+
+   temp.remove();
+
+   if(!copied){
+    throw new Error('Não foi possível copiar');
+   }
+
+  }
+
+  btn.textContent='COPIADO';
+
+  setTimeout(()=>{
+   btn.textContent='COPIAR';
+  },1800);
+
+ }catch(error){
+
+  btn.textContent='ERRO';
+
+  setTimeout(()=>{
+   btn.textContent='COPIAR';
+  },1800);
+
+ }
+
+};
+
+// Números do dado
+for(let i=1;i<=6;i++){
+
+ const b=document.createElement('button');
+
+ b.textContent=i;
+
+ b.onclick=()=>{
+
+  if(rolling)return;
+
+  selected=i;
+
+  root.querySelectorAll('#lvDiceNums button')
+   .forEach(x=>x.classList.remove('chosen'));
+
+  b.classList.add('chosen');
+
+  $('lvRoll').disabled=false;
+  $('lvRoll').style.opacity='1';
+
+ };
+
+ $('lvDiceNums').appendChild(b);
+
+}
+
+// Botões de ação
+$('lvRoll').onclick=startRoll;
+
+$('lvSendPix').onclick=sendPix;
+
+$('lvContinuePlaying').onclick=backToStart;
+
+$('lvRetryLose').onclick=backToStart;
+
+makeDie(1);
+
+})();
+</script>
+
+</body>
+</html>
